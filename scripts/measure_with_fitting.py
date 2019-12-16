@@ -5,62 +5,60 @@ import click
 import pandas as pd
 
 from stacktools import DataLoader
-from stacktools.measure import measure_by_obsphere_fit
+from stacktools.measure import measure_by_obsphere_fit_brute
 
 
-def measure_set_of_regions(segmentation, measure_stack, rids):
+def measure_single_region(segmentation, measure_stack, rid):
 
-    measurements = []
-    for rid in rids:
-        m, p = measure_by_obsphere_fit(segmentation, measure_stack, rid)
+    logging.info(f"Measuring region {rid}")
+    m, p_sphere, p_cell = measure_by_obsphere_fit_brute(segmentation, measure_stack, rid)
 
-        if m is not 0:
-            measurement = {
-                'mean_sphere_signal': m,
-                'sphere_centroid': p
-            }
-            
-            measurements.append(measurement)
+    measurement = {
+        'sphere_fit_centroid': p_sphere,
+        'cell_centroid': p_cell,
+        'fitted_measurement': m,
+        'region_id': rid
+    }
 
-    return measurements
+    return measurement
 
 
-def measure_file(segmentation, measure_stack, files, fid):
+def measure_set_of_regions(segmentation, measure_stack, region_list):
 
-    measurements = measure_set_of_regions(segmentation, measure_stack, files[fid])
-    df = pd.DataFrame(measurements)
-    df['file'] = fid
-    
-    return df
+    measurements = [
+        measure_single_region(segmentation, measure_stack, rid)
+        for rid in region_list
+    ]
+
+    return pd.DataFrame(measurements)
+
 
 @click.command()
 @click.argument('ids_uri')
 @click.argument('seg_dirpath')
-@click.argument('root_name')
+@click.option('--root-name', default="fca3_FLCVenus_root2")
 def main(ids_uri, seg_dirpath, root_name):
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s: %(message)s'
+    )
 
+    logging.info("Initialising dataloader")
     dl = DataLoader(ids_uri, seg_dirpath)
 
+    logging.info(f"Loading root {root_name}")
     segmentation, venus_stack, files = dl.load_by_name(root_name)
-    logging.info("Loaded data")
 
+    # fids = [3, 9]
     dfs = []
-    for fid in list(files.keys())[:2]:
-        logging.info(f"Measuring file {fid}")
-        df = measure_file(segmentation, venus_stack, files, fid)
-        # measurements = measure_set_of_regions(segmentation, venus_stack, files[fid])
-        # df = pd.DataFrame(measurements)
-        # df['file'] = fid
-
+    for fid in files:
+        df = measure_set_of_regions(segmentation, venus_stack, files[fid])
+        df['file_id'] = fid
         dfs.append(df)
-    
-    root_df = pd.concat(dfs, ignore_index=True)
 
-    root_df['root'] = 2
-
-    print(root_df.to_csv(index=False))
+    df_all = pd.concat(dfs)
+    df_all.to_csv(f"{root_name}-spherefit.csv", index=False)
 
 
 if __name__ == "__main__":
