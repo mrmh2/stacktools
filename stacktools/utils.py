@@ -1,10 +1,12 @@
+import os
+
 import numpy as np
 
 from skimage import img_as_float
 from skimage.morphology import erosion, dilation, reconstruction
 from skimage.restoration import denoise_tv_chambolle
 
-from dtoolbioimage import Image
+from dtoolbioimage import Image, Image3D
 
 from scipy.ndimage import gaussian_filter
 
@@ -90,6 +92,5 @@ def get_segmentation(segmentation_dirpath, root_name):
     segmentation_fpath = os.path.join(segmentation_dirpath, root_name, segmentation_name)
     volume = volread(segmentation_fpath)
     transposed = np.transpose(volume, axes=(1, 2, 0))
-    segmentation = transposed.view(Segmentation3D)
 
-    return segmentation
+    return transposed
