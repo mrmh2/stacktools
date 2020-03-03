@@ -138,14 +138,15 @@ def multi_measure(segmentation, measure_stack, rid):
     points_in_region = set(zip(*coords))
 
     points_outside_element = points_in_region - points_in_element
-
-    re, ce, ze = zip(*points_outside_element)
+    if len(points_outside_element):
+        re, ce, ze = zip(*points_outside_element)
+        mean_outside_element = measure_image[re, ce, ze].mean()
+    else:
+        mean_outside_element = None
 
     overlap_points = points_in_element & points_in_region
-
     overlap_fraction = len(overlap_points) / len(points_in_element)
     mean_in_element = measure_image[rr, cc, zz].mean()
-    mean_outside_element = measure_image[re, ce, ze].mean()
 
     measures = {
         'cell_voxels': n_voxels,
