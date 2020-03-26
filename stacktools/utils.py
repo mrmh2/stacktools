@@ -6,13 +6,14 @@ from skimage import img_as_float
 from skimage.morphology import erosion, dilation, reconstruction
 from skimage.restoration import denoise_tv_chambolle
 
-from dtoolbioimage import Image, Image3D
+from dtoolbioimage import Image, Image3D, scale_to_uint8
 
 from scipy.ndimage import gaussian_filter
 
 from imageio import volread
 
 from stacktools.cache import fn_caching_wrapper
+from stacktools.data import get_stack_by_name
 
 
 def scale_factors(array):
@@ -94,3 +95,11 @@ def get_segmentation(segmentation_dirpath, root_name):
     transposed = np.transpose(volume, axes=(1, 2, 0))
 
     return transposed
+
+
+def get_wall_mask(image_ds_uri, root_name):
+    wall_stack = get_stack_by_name(image_ds_uri, root_name, channel=1)
+
+    mask = erosion(scale_to_uint8(wall_stack) < 100)
+
+    return mask

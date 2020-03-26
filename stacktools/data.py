@@ -1,6 +1,19 @@
-from dtoolbioimage import ImageDataSet, zoom_to_match_scales
+import numpy as np  
+from skimage.morphology import dilation
 
-from stacktools.utils import fn_caching_wrapper
+from dtoolbioimage import ImageDataSet, zoom_to_match_scales, scale_to_uint8
+
+from stacktools.cache import fn_caching_wrapper
+
+
+def get_masked_venus_stack(image_ds_uri, root_name):
+    venus_stack = get_stack_by_name(image_ds_uri, root_name)
+    wall_stack = get_stack_by_name(image_ds_uri, root_name, channel=1)
+
+    base_mask = dilation(scale_to_uint8(wall_stack) > 100)
+    venus_stack[np.where(base_mask)] = 0
+
+    return venus_stack
 
 
 @fn_caching_wrapper

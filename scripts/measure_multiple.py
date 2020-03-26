@@ -9,9 +9,10 @@ import click
 
 import pandas as pd
 
+
 from stacktools import DataLoader
 from stacktools.measure import measure_by_obsphere_fit_brute, multi_measure
-from stacktools.data import get_stack_by_name
+from stacktools.data import get_stack_by_name, get_masked_venus_stack
 from stacktools.utils import get_segmentation, filter_segmentation_by_regions
 
 
@@ -42,6 +43,7 @@ def get_centroids_by_rid(df, fid):
     return centroid_by_rid
 
 
+
 @click.command()
 @click.argument('image_ds_uri')
 @click.argument('segmentation_dirpath')
@@ -57,7 +59,7 @@ def main(image_ds_uri, segmentation_dirpath, root_name, root_data_basepath):
     logger.setLevel(logging.DEBUG)
 
     logger.info("Loading stacks")
-    venus_stack = get_stack_by_name(image_ds_uri, root_name)
+    masked_venus_stack = get_masked_venus_stack(image_ds_uri, root_name)
     root_data_fpath = os.path.join(root_data_basepath, f"{root_name}-spherefit.csv")
     logger.info(f"Loading root data from {root_data_fpath}")
     root_df = pd.read_csv(root_data_fpath)
@@ -70,15 +72,15 @@ def main(image_ds_uri, segmentation_dirpath, root_name, root_data_basepath):
 
     def measure_fid(fid):
         rids = list(root_df[root_df.file_id == fid].region_id)
-        measure_df = measure_set_of_regions(trimmed_segmentation, venus_stack, rids[:3])
+        measure_df = measure_set_of_regions(trimmed_segmentation, masked_venus_stack, rids[:3])
         measure_df['file_id'] = fid
         return measure_df
 
-    pool = ProcessPool(processes=5)
+    pool = ProcessPool(processes=3)
 
     results = pool.map(measure_fid, file_ids)
     df_all = pd.concat(results)
-    df_all.to_csv(f"{root_name}-multimeasure.csv", float_format='%.3f', index=False)
+    df_all.to_csv(f"{root_name}-multimeasure-masked.csv", float_format='%.3f', index=False)
 
 
 if __name__ == "__main__":
