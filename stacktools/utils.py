@@ -13,8 +13,6 @@ from scipy.ndimage import gaussian_filter
 from imageio import volread
 
 from stacktools.cache import fn_caching_wrapper
-from stacktools.data import get_stack_by_name
-
 
 def scale_factors(array):
 
@@ -87,14 +85,6 @@ def denoise_tv_chambolle_f32(stack, weight=0.01):
     return denoise_tv_chambolle(stack, weight=weight).astype(np.float32)
 
 
-@fn_caching_wrapper
-def get_segmentation(segmentation_dirpath, root_name):
-    segmentation_name = "Root_segments.tif.tif"
-    segmentation_fpath = os.path.join(segmentation_dirpath, root_name, segmentation_name)
-    volume = volread(segmentation_fpath)
-    transposed = np.transpose(volume, axes=(1, 2, 0))
-
-    return transposed
 
 
 def get_wall_mask(image_ds_uri, root_name):
