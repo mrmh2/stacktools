@@ -5,3 +5,8 @@ results
 __pycache__
 notebooks
 local-data
+
+.DS_Store
+*.png
+*.tif
+*.csv
