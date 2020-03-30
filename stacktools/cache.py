@@ -41,6 +41,7 @@ def fn_caching_wrapper(func):
             start_time = time.time()
             array = func(*args, **kwargs)
             end_time = time.time()
+            CACHEPATH.mkdir(exist_ok=True, parents=True)
             write_array_to_fpath(cached_fpath, array)
             with open(info_fpath, 'w') as fh:
                 json.dump(
