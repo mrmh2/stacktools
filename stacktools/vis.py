@@ -184,4 +184,4 @@ def create_file_projection_composite(rootdata, fid):
     region_label_image = create_region_label_image(
         rootdata.wall_stack.shape[1], rootdata.cell_centroids(fid))
 
-    return np.vstack([header, fpi_lateral, projections, region_label_image]).view(dbiImage)
+    return np.vstack([header, fpi_lateral, projections, region_label_image]).view(Image)
