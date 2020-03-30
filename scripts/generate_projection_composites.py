@@ -20,7 +20,7 @@ from stacktools.utils import (
     centroid_project,
 )
 
-from stacktools.data import FCADataLoader, FCARootData
+from stacktools.data import FCADataSetLoader, FCARootData
 
 
 def create_region_label_image(cdim, centroid_by_rid):
@@ -133,16 +133,16 @@ def get_stack_by_name(ids_uri, root_name, channel=0):
 
 @click.command()
 @click.argument('image_ds_uri')
-@click.argument('segmentation_dirpath')
+@click.argument('seg_ds_uri')
 @click.argument('root_data_basepath')
 @click.option('--root-name', default="fca3_FLCVenus_root2")
-def main(image_ds_uri, segmentation_dirpath, root_data_basepath, root_name):
+def main(image_ds_uri, seg_ds_uri, root_data_basepath, root_name):
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger("generate_projection_composites")
     logging.getLogger("stacktools.cache").setLevel(level=logging.DEBUG)
 
     logger.info(f"Loading root {root_name}")
-    loader = FCADataLoader(image_ds_uri, root_data_basepath, segmentation_dirpath)
+    loader = FCADataSetLoader(image_ds_uri, seg_ds_uri, root_data_basepath)
     rootdata = loader.load_root(root_name)
 
     logger.info(f"Filtering segmentation for regions in files")
@@ -161,41 +161,6 @@ def main(image_ds_uri, segmentation_dirpath, root_data_basepath, root_name):
             trimmed_segmentation, fid, rootdata.wall_stack, stacks, root_name, rootdata.cell_centroids(fid)
             )
         fsm.save(f"fsm-{root_name}-file{fid}.png")
-
-
-# @click.command()
-# @click.argument('image_ds_uri')
-# @click.argument('segmentation_dirpath')
-# @click.argument('root_data_basepath')
-# @click.option('--root-name', default="fca3_FLCVenus_root2")
-# def main(image_ds_uri, segmentation_dirpath, root_data_basepath, root_name):
-#     logging.basicConfig(level=logging.INFO)
-#     logger = logging.getLogger("generate_projection_composites")
-#     logging.getLogger("stacktools.cache").setLevel(level=logging.DEBUG)
-
-#     logger.info("Loading stacks")
-#     venus_stack = get_stack_by_name(image_ds_uri, root_name)
-#     wall_stack = get_stack_by_name(image_ds_uri, root_name, channel=1)
-
-#     root_data_fpath = os.path.join(root_data_basepath, f"{root_name}-spherefit.csv")
-#     logger.info(f"Loading root data from {root_data_fpath}")
-#     df = pd.read_csv(root_data_fpath)
-#     logger.info(f"Loading segmentation from {segmentation_dirpath}")
-#     segmentation = get_segmentation(segmentation_dirpath, root_name).view(Segmentation3D)
-#     logger.info(f"Filtering segmentation for regions in files")
-#     trimmed_segmentation = filter_segmentation_by_regions(segmentation, df.region_id)
-
-#     logger.info("Generating denoised measurement stack")
-#     denoised_venus_stack = denoise_tv_chambolle_f32(venus_stack, weight=0.01)
-#     logger.info("Calculating background subtracted stack")
-#     hdome_venus_stack = calculate_hdome(denoised_venus_stack)
-
-#     stacks = [venus_stack, denoised_venus_stack, hdome_venus_stack]
-
-#     for fid in set(df.file_id):
-#         centroid_by_rid = get_centroids_by_rid(df, fid)
-#         fsm = file_summary_image(trimmed_segmentation, fid, wall_stack, stacks, root_name, centroid_by_rid)
-#         fsm.save(f"fsm-{root_name}-file{fid}.png")
 
 
 if __name__ == "__main__":
