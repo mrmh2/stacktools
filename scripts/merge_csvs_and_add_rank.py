@@ -84,7 +84,7 @@ def add_ranks(df):
 @click.command()
 @click.argument('individual_results_dirpath')
 @click.argument('output_csv_fpath')
-@click.option('--prefix', default="fca3_FLC_Venus_root")
+@click.option('--prefix', default="fca3_FLCVenus_root")
 def main(individual_results_dirpath, output_csv_fpath, prefix):
 
     def fpath_to_root_number(fpath):
