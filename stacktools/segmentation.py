@@ -4,6 +4,8 @@ from imageio import volread
 
 from dtoolbioimage.segment import Segmentation3D
 
+from stacktools.cache import fn_caching_wrapper
+
 
 def load_segmentation_from_tif(segmentation_fpath):
     volume = volread(segmentation_fpath)
@@ -14,11 +16,14 @@ def load_segmentation_from_tif(segmentation_fpath):
     return segmentation
 
 
-def filter_segmentation_by_region_list(segmentation, rids):
+@fn_caching_wrapper
+def filter_segmentation_by_region_list(segmentation, region_ids):
 
-    trimmed_segmentation = np.zeros(segmentation.shape, dtype=segmentation.dtype)
+    rids_not_in_files = segmentation.labels - set(region_ids)
 
-    for rid in rids:
-        trimmed_segmentation[np.where(segmentation == rid)] = rid
+    trimmed_segmentation = segmentation.copy()
 
-    return trimmed_segmentation.view(Segmentation3D)
+    for rid in rids_not_in_files:
+        trimmed_segmentation[np.where(trimmed_segmentation == rid)] = 0
+
+    return trimmed_segmentation
