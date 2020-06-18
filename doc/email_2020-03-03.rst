@@ -1,0 +1,21 @@
+
+Hi Rea,
+
+I've adapted the code to try to adjust for the bleed-through of the PI into the
+venus channel. This code generates a mask by thresholding the cell wall (PI)
+channel of the image. It then applies that mask to both the venus channel and
+the segmentation, after which it takes the same measurements as before.
+
+This now introduces new parameters to the code (the threshold for the cell wall
+intensity for the mask, and whether the mask is dilated before application).
+I've picked fairly conservative defaults for these (i.e. the code will remove
+some of the outer edge of each cell, but not a lot), however we could adjust
+these.
+
+I've attached results for fca1, fca3 and Landsberg. The code fails in a few
+cases (I suspect weirdnesses with very small cells, but I haven't had time
+to check in detail), so there may be some NaN type values in the output.
+
+Best,
+
+Matthew

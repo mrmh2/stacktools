@@ -1,0 +1,49 @@
+Hi Rea,
+
+I've created more visualisations to show the sphere fitting positions/root
+files. I've uploaded the results to OneDrive because they're big overall - I'll
+share the link.
+
+It should contain (the first two of these in a zip file):
+
+1. Individual file projections (for FCA3, FCA1 and Landsberg). These now have
+   annotations showing where the sphere fit is (with another slight change,
+   more below).
+2. Composites images, one per root showing all of the sphere fit positions (but
+   without the other information). This gives an overview of how well the
+   fitting's working.
+3. An example TIF stack (you should be able to open this with Fiji/ImageJ) that
+   shows cell centroids (red) and fitted sphere positions (yellow) as spherical
+   shells merged with the FLC-Venus channel, for FCA3 root 5.
+
+The file projections now use a z plane for each cell corresponding to the
+center of the fitted sphere, rather than the cell centroid. This will make
+them look slightly different, though not massively so.
+
+The projections/composites don't show the z position of the sphere very
+effectively, that's why I tried creating the composite stack. I only created
+this for one root because it was fiddle - if it's useful I can work out how to
+automate it, but it only makes sense to do this if the visualisation helps :-)
+
+Some thoughts:
+
+1. There spheres might be too big. They're about the right size for most cells,
+but for any that are too small, it definitely messes up the measurement.
+
+2. The fits generally look ok, with a few odd exceptions. There aren't as many
+that fit around the cell edges as I'd expected. However, looking again through
+the files, I think some files (particularly epidermal ones) end up with a lot
+more bleed through from the PI channel and have some high signal areas that
+aren't nuclei.
+
+3. It's still hard to see what's going on in the z plane. I'll look at ways
+to visualise cross sections when I get time, but files on the bottom of the
+root definitely look like they cause more problems.
+
+4. Correcting for a fit partially outside the cell tends to amplify the 
+problems from 2., I think. I might look if there's some easy way to constrain
+the fit to lie either entirely in the cell, or over a certain percentage.
+
+Best,
+
+Matthew
