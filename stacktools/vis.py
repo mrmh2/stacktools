@@ -7,6 +7,8 @@ from skimage.draw import circle_perimeter
 
 from dtoolbioimage import Image, scale_to_uint8
 
+from stacktools.measure import measure_properties
+
 
 def scale_factors(array):
     scaled = array.astype(np.float32)
@@ -185,3 +187,39 @@ def create_file_projection_composite(rootdata, fid):
         rootdata.wall_stack.shape[1], rootdata.cell_centroids(fid))
 
     return np.vstack([header, fpi_lateral, projections, region_label_image]).view(Image)
+
+
+def create_colour_func(values):
+    vmin = min(values)
+    vmax = max(values)
+    vdiff = vmax - vmin
+
+    def colour_func(v):
+        G = int(255 * ((v - vmin) / vdiff))
+        R = 255 - G
+        return R, G, 0
+
+    return colour_func
+
+
+def create_heatmap(sms, z):
+    measurements = [
+        measure_properties(sms, rid)
+        for rid in sms.segmentation.labels
+    ]
+
+    intensities_by_label = {
+        measurement['label']: measurement['mean_intensity']
+        for measurement in measurements
+    }
+
+    rdim, cdim, _ = sms.measure_stack.shape
+    heatmap = np.zeros((rdim, cdim, 3), dtype=np.uint8)
+    colour_func = create_colour_func(intensities_by_label.values())
+
+    seg_plane = sms.segmentation[:, :, z]
+    for l, intensity in intensities_by_label.items():
+        coords = np.where(seg_plane == l)
+        heatmap[coords] = colour_func(intensity)
+
+    return heatmap.view(Image)

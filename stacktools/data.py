@@ -1,5 +1,8 @@
 import os
 import ast
+import logging
+import pathlib
+import dataclasses
 
 import dtoolcore
 import imageio
@@ -12,7 +15,7 @@ from dbimage.io import read_dbim_from_fpath
 
 from skimage.morphology import dilation
 
-from dtoolbioimage import ImageDataSet, zoom_to_match_scales, scale_to_uint8
+from dtoolbioimage import ImageDataSet, zoom_to_match_scales, scale_to_uint8, Image3D
 from dtoolbioimage.segment import Segmentation3D
 
 from stacktools.cache import fn_caching_wrapper
@@ -21,8 +24,93 @@ from stacktools.utils import (
     calculate_hdome,
     filter_segmentation_by_regions
 )
-# from stacktools.utils import get_segmentation
 
+logger = logging.getLogger(__name__)
+
+
+@dataclasses.dataclass
+class SegmentationMeasureStack:
+
+    segmentation: Segmentation3D
+    measure_stack: Image3D
+    wall_stack: Image3D
+
+
+class InitialsSMS(SegmentationMeasureStack):
+
+    @classmethod
+    def from_config_and_spec(cls, config, spec):
+        wall_stack = get_zoomed_stack_cached(
+            config.ids_uri,
+            spec.image_name,
+            spec.series_name,
+            config.wall_channel
+        )
+        measure_stack = get_zoomed_stack_cached(
+            config.ids_uri,
+            spec.image_name,
+            spec.series_name,
+            config.measure_channel
+        )
+        segmentation, label_lookup = load_segmentation_and_label_lookup(
+            config, spec)
+
+        sms = cls(segmentation, measure_stack, wall_stack)
+        sms.label_lookup = label_lookup
+
+        return sms
+
+
+def load_segmentation_and_label_lookup(config, spec):
+
+    base_dirpath = pathlib.Path(config.segmentation_dirpath)
+    region_id_fpath = base_dirpath/spec.fname
+
+    segmentation_fpath = str(region_id_fpath).rsplit(
+        '.', maxsplit=1)[0] + '.tif'
+    logger.info(f"Loading segmentation from {segmentation_fpath}")
+    s3d = get_segmentation(segmentation_fpath).view(Segmentation3D)
+
+    df = pd.read_csv(region_id_fpath, names=["rid", "label"])
+    valid_regions = set(df[df.label != 0].rid)
+
+    label_lookup = df[df.label != 0].set_index("rid").label.to_dict()
+
+    trimmed_segmentation = filter_segmentation_by_region_list(
+        s3d, valid_regions).view(Segmentation3D)
+
+    return trimmed_segmentation, label_lookup
+
+
+@fn_caching_wrapper
+def get_zoomed_stack_cached(ids_uri, image_name, series_name, channel):
+    stack = get_stack_cached(ids_uri, image_name, series_name, channel)
+    return zoom_to_match_scales(stack)
+
+
+@fn_caching_wrapper
+def get_stack_cached(ids_uri, image_name, series_name, channel):
+    image_ds = ImageDataSet(ids_uri)
+
+    return image_ds.get_stack(
+        image_name,
+        series_name,
+        0,
+        channel=channel
+    )
+
+
+@fn_caching_wrapper
+def filter_segmentation_by_region_list(segmentation, region_ids):
+
+    rids_not_in_files = segmentation.labels - set(region_ids)
+
+    trimmed_segmentation = segmentation.copy()
+
+    for rid in rids_not_in_files:
+        trimmed_segmentation[np.where(trimmed_segmentation == rid)] = 0
+
+    return trimmed_segmentation
 
 
 def get_masked_venus_stack(image_ds_uri, root_name):
@@ -48,12 +136,9 @@ def get_stack_by_name(ids_uri, root_name, channel=0):
     return zoomed_stack
 
 
-# TODO this is ugly
 @fn_caching_wrapper
-def get_segmentation(segmentation_dirpath, root_name):
-    segmentation_name = "Root_segments.tif.tif"
-    segmentation_fpath = os.path.join(
-        segmentation_dirpath, root_name, segmentation_name)
+def get_segmentation(segmentation_fpath):
+
     volume = imageio.volread(segmentation_fpath)
     transposed = np.transpose(volume, axes=(1, 2, 0))
 

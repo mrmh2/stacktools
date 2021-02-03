@@ -43,7 +43,7 @@ class DataLoader(object):
         file_lookup = pd.Series(df.file.values,index=df.rid).to_dict()
         fids_to_rids = defaultdict(list)
         for rid, fid in file_lookup.items():
-            if fid is not 0:
+            if fid != 0:
                 fids_to_rids[fid].append(rid)
         
         return fids_to_rids
