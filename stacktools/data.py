@@ -64,20 +64,23 @@ class InitialsSMS(SegmentationMeasureStack):
 def load_segmentation_and_label_lookup(config, spec):
 
     base_dirpath = pathlib.Path(config.segmentation_dirpath)
-    region_id_fpath = base_dirpath/spec.fname
+    region_id_fpath = base_dirpath/spec.regions_fname
 
     segmentation_fpath = str(region_id_fpath).rsplit(
         '.', maxsplit=1)[0] + '.tif'
     logger.info(f"Loading segmentation from {segmentation_fpath}")
     s3d = get_segmentation(segmentation_fpath).view(Segmentation3D)
 
+    logger.info(f"Loading regions from {region_id_fpath}")
     df = pd.read_csv(region_id_fpath, names=["rid", "label"])
     valid_regions = set(df[df.label != 0].rid)
 
     label_lookup = df[df.label != 0].set_index("rid").label.to_dict()
 
     trimmed_segmentation = filter_segmentation_by_region_list(
-        s3d, valid_regions).view(Segmentation3D)
+        s3d,
+        valid_regions
+    ).view(Segmentation3D)
 
     return trimmed_segmentation, label_lookup
 

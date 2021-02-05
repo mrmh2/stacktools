@@ -10,3 +10,6 @@ local-data
 *.png
 *.tif
 *.csv
+
+build
+dist
