@@ -35,9 +35,14 @@ def centroid_project(stack, segmentation, centroids_by_rid):
 def variable_z_project(stack, segmentation, rid_to_z):
     canvas = np.zeros((512, 1024), dtype=np.float32)
 
+    rdim, cdim, zdim = segmentation.shape
+    # print(f"Working with segmentation of shape {segmentation.shape}")
+    # print(rid_to_z)
+
     coords_vals = []
-    for rid, z in rid_to_z.items():
-        closed_region = erosion(dilation(segmentation[:, :, int(z)] == rid))
+    for rid, zstr in rid_to_z.items():
+        z = min(int(zstr), zdim-1) # Make sure we're not trying to pick a plane outside the segmenation
+        closed_region = erosion(dilation(segmentation[:, :, z] == rid))
         rr, cc = np.where(closed_region)
         coords_vals.append(((rr, cc), stack[rr, cc, int(z)]))
 

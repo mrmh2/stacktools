@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='stacktools',
-      version='0.1.1',
+      version='0.1.2',
       description='data prep',
       url='http://github.com/mrmh2/stacktools',
       author='Matthew Hartley',
